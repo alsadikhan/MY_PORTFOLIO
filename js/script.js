@@ -110,7 +110,7 @@ $('nt').textContent=items.length;
 
 const active=new Map(),boxes=new Set(),autoPlayedItems=new Set(),manualPlayedItems=new Set();
 let rendering=false,lastRenderTime=0,skipAnimation=false,direction=1,autoScrollRunning=false,autoScrollAtEnd=false,autoScrollFrame=0,autoScrollTime=0;
-let lastScrollY=scrollY,pendingDirection=1,pendingDistance=0,scanFrame=0,hudTimer=0,scrollEndTimer=0,completed=0;
+let lastScrollY=scrollY,pendingDirection=1,pendingDistance=0,touchY=null,touchPendingDirection=1,touchPendingDistance=0,scanFrame=0,hudTimer=0,scrollEndTimer=0,completed=0;
 const originalScrollBehavior=root.style.scrollBehavior;
 
 function visible(item){
@@ -289,6 +289,8 @@ if(skipAnimation)return;
 const currentY=scrollY;
 if(autoScrollRunning){
 direction=1;pendingDirection=1;pendingDistance=0;lastScrollY=currentY;
+}else if(touchY!==null){
+lastScrollY=currentY;
 }else if(currentY!==lastScrollY){
 const delta=currentY-lastScrollY,nextDirection=delta>0?1:-1;
 lastScrollY=currentY;
@@ -299,22 +301,48 @@ pendingDistance+=Math.abs(delta);
 if(pendingDistance>=8){direction=nextDirection;pendingDistance=0}
 }
 }
-if(currentY<=1){direction=1;pendingDirection=1;pendingDistance=0;manualPlayedItems.clear()}
+if(currentY<=1){direction=1;pendingDirection=1;pendingDistance=0}
 clearTimeout(hudTimer);
 hud.classList.add('show');
 $('st').textContent=direction>0?'Typing while scrolling':'Normal while scrolling';
 if(!scanFrame)scanFrame=requestAnimationFrame(scan);
 if(direction<0){
-manualPlayedItems.clear();
 active.forEach((state,item)=>restore(item,state));
 if(scanFrame){cancelAnimationFrame(scanFrame);scanFrame=0}
 }
 clearTimeout(scrollEndTimer);
 scrollEndTimer=setTimeout(finishScroll,220);
 }
+function onTouchStart(event){
+stopAutoScroll();
+touchY=event.touches.length===1?event.touches[0].clientY:null;
+touchPendingDirection=direction;
+touchPendingDistance=0;
+}
+function onTouchMove(event){
+if(touchY===null||event.touches.length!==1)return;
+const nextY=event.touches[0].clientY,delta=touchY-nextY;
+touchY=nextY;
+if(!delta)return;
+const nextDirection=delta>0?1:-1;
+if(nextDirection===direction){touchPendingDirection=nextDirection;touchPendingDistance=0}
+else{
+if(nextDirection!==touchPendingDirection){touchPendingDirection=nextDirection;touchPendingDistance=0}
+touchPendingDistance+=Math.abs(delta);
+if(touchPendingDistance>=8){direction=nextDirection;pendingDirection=nextDirection;pendingDistance=0;touchPendingDistance=0}
+}
+}
+function onTouchEnd(){
+touchY=null;
+touchPendingDistance=0;
+lastScrollY=scrollY;
+}
 addEventListener('scroll',onScroll,{passive:true});
 addEventListener('wheel',stopAutoScroll,{passive:true});
-addEventListener('touchstart',stopAutoScroll,{passive:true});
+addEventListener('touchstart',onTouchStart,{passive:true});
+addEventListener('touchmove',onTouchMove,{passive:true});
+addEventListener('touchend',onTouchEnd,{passive:true});
+addEventListener('touchcancel',onTouchEnd,{passive:true});
 sectionLinks.forEach(({link})=>link.addEventListener('click',stopAutoScroll));
 addEventListener('keydown',event=>{
 if(['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(event.key))stopAutoScroll();
