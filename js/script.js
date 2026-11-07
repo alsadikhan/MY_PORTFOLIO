@@ -1,5 +1,16 @@
 const $=id=>document.getElementById(id),root=document.documentElement;
 
+/* use the native mail app on phones and Gmail web on desktop */
+const emailLink=document.querySelector('[data-i="email"]'),emailLayout=matchMedia('(max-width:760px)');
+function updateEmailLink(){
+const mobile=emailLayout.matches;
+emailLink.href=mobile?emailLink.dataset.mobileHref:emailLink.dataset.desktopHref;
+if(mobile){emailLink.removeAttribute('target');emailLink.removeAttribute('rel')}
+else{emailLink.target='_blank';emailLink.rel='noopener noreferrer'}
+}
+updateEmailLink();
+emailLayout.addEventListener('change',updateEmailLink);
+
 /* always-on polish: scroll bar, mouse glow, card spotlight */
 const bar=$('bar'),glow=$('glow');
 addEventListener('scroll',()=>{const h=root;bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight||1)*100)+'%'},{passive:true});
