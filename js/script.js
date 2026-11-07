@@ -53,7 +53,8 @@ if(root.classList.contains('pre-build'))run();
 function run(){
 const fx=$('fx'),hud=$('hud'),CO=['#7dd3fc','#a5b4fc','#5eead4','#f9a8d4','#93c5fd','#fde68a','#86efac','#fdba74'],NM=['agent-01','planner','builder','reviewer','designer','copywriter','tester','deployer'];
 let skipped=false,done=0,ai=0;
-const sleep=ms=>skipped?Promise.resolve():new Promise(r=>setTimeout(r,ms));
+const waits=new Set(),sleep=ms=>skipped?Promise.resolve():new Promise(resolve=>{const timer=setTimeout(()=>{waits.delete(cancel);resolve()},ms),cancel=()=>{clearTimeout(timer);waits.delete(cancel);resolve()};waits.add(cancel)});
+hud.classList.add('show');
 /* agents (cursors) */
 const agents=NM.map((n,i)=>{const el=document.createElement('div');el.className='ag';el.style.setProperty('--c',CO[i]);
 el.innerHTML='<svg viewBox="0 0 16 16"><path d="M1 1l5 14 2-6 6-2z" fill="'+CO[i]+'" stroke="#fff" stroke-width=".8"/></svg><i>'+n+'</i>';fx.appendChild(el);
@@ -94,9 +95,9 @@ a.tx=c?c.right+4:r.left+8;a.ty=c?c.bottom:r.top+8}
 a.x+=(a.tx-a.x)*a.k;a.y+=(a.ty-a.y)*a.k;a.el.style.transform='translate('+a.x+'px,'+a.y+'px)'}
 for(const b of boxes){const r=b.el.getBoundingClientRect();b.box.style.transform='translate('+r.left+'px,'+r.top+'px)';b.box.style.width=r.width+'px';b.box.style.height=r.height+'px';b.lab.textContent=Math.round(r.width)+' × '+Math.round(r.height)}
 requestAnimationFrame(tick)})();
-$('skip').onclick=()=>{skipped=true};
+$('skip').onclick=()=>{skipped=true;waits.forEach(cancel=>cancel())};
 /* timeline */
-(async()=>{await sleep(900);hud.classList.add('show');await sleep(700);
+(async()=>{await sleep(1600);
 for(const g of groups){await Promise.all(g.map((it,i)=>sleep(i*190).then(()=>build(it))));await sleep(300)}
 root.classList.remove('pre-build','building');$('st').textContent='Complete ✓';$('skip').style.display='none';
 scrollTo({top:0,behavior:'smooth'});agents.forEach(a=>a.el.classList.remove('on'));
