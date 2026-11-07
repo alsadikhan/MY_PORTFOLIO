@@ -14,13 +14,14 @@
 <div class="progress" id="bar"></div><div class="glow" id="glow"></div><div class="fx" id="fx"></div>
 <div class="hud" id="hud"><span class="dots" id="dots"></span><span class="sep"></span><span><b id="na">8</b> agents</span><span class="sep"></span><span><b id="nd">0</b> / <b id="nt">0</b> layers</span><span class="sep"></span><span class="st" id="st">Scroll to type</span><button id="skip" type="button">Skip typing</button></div>
 
-<nav data-b>
-  <div class="logo">AL</div>
-  <ul class="mono"><li class="hide-m"><a href="#about">About</a></li><li class="hide-m"><a href="#education">Education</a></li><li class="hide-m"><a href="#projects">Projects</a></li><li class="hide-m"><a href="#skills">Skills</a></li><li><a class="hire" href="#contact">Contact</a></li></ul>
+<nav>
+  <a class="logo" href="#top" aria-label="Al Sadi Khan home">AL</a>
+  <button class="nav-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-links"><span></span><span></span><span></span></button>
+  <ul class="mono" id="nav-links"><li><a href="#about">About</a></li><li><a href="#education">Education</a></li><li><a href="#projects">Projects</a></li><li><a href="#skills">Skills</a></li><li><a class="hire" href="#contact">Contact</a></li></ul>
 </nav>
 
 <section id="top">
-  <h1 class="hero-word" data-b aria-label="Portfolio"><span>P</span><span>O</span><span>R</span><span>T</span><span>F</span><span>O</span><span>L</span><span>I</span><span>O</span></h1>
+  <h1 class="hero-word" aria-label="Al Sadi Khan"><span class="hero-name"><span>A</span><span>l</span></span><span class="hero-name"><span>S</span><span>a</span><span>d</span><span>i</span></span><span class="hero-name"><span>K</span><span>h</span><span>a</span><span>n</span></span></h1>
   <div class="hero">
     <div>
       <span class="tag mono" data-b>Hello, I’m Al Sadi Khan.</span>
@@ -88,11 +89,22 @@
 <section id="contact" class="cta">
   <span class="mono sec-label" data-b>05 — Contact</span>
   <h2 data-b>Let’s connect and build something.</h2>
-  <p class="lead" data-b>I’m open to internships, freelance projects and collaboration. Send me a message on any platform below.</p>
-  <div class="btns mono" data-b style="justify-content:center"><a class="btn primary" data-i="email" data-mobile-href="mailto:alsadikhan0@gmail.com" data-desktop-href="https://mail.google.com/mail/?view=cm&amp;to=alsadikhan0%40gmail.com" href="mailto:alsadikhan0@gmail.com">email</a><a class="btn" href="https://github.com/alsadikhan">GitHub</a><a class="btn" href="#">LinkedIn</a><a class="btn" href="#">Facebook</a><a class="btn" href="#">Instagram</a></div>
+  <p class="lead" data-b>I’m open to internships, freelance projects and collaboration. Send me a message below.</p>
+  <div class="btns mono" data-b style="justify-content:center"><a class="btn primary" data-i="email" data-mobile-href="mailto:alsadikhan0@gmail.com" data-desktop-href="https://mail.google.com/mail/?view=cm&amp;to=alsadikhan0%40gmail.com" href="mailto:alsadikhan0@gmail.com">Email me</a><a class="btn" href="https://github.com/alsadikhan">GitHub</a><a class="btn" href="#">LinkedIn</a><a class="btn" data-i="x" href="https://x.com/" target="_blank" rel="noopener noreferrer">X</a></div>
+  <form class="form-card" id="contactForm" data-b>
+    <div class="fc-head"><div><span class="eyebrow">Write me</span><h3>Start a conversation</h3></div><span class="fc-note">Form open</span></div>
+    <div class="row">
+      <label class="field"><span>Name</span><input id="cf-name" name="name" type="text" placeholder="Your name" autocomplete="name" required></label>
+      <label class="field"><span>Email</span><input id="cf-email" name="email" type="email" placeholder="you@email.com" autocomplete="email" required></label>
+    </div>
+    <span class="topic-label" id="cf-topic-label">Topic</span>
+    <div class="topics" role="group" aria-labelledby="cf-topic-label"><button type="button" class="topic active" aria-pressed="true">Internship</button><button type="button" class="topic" aria-pressed="false">Project</button><button type="button" class="topic" aria-pressed="false">Collaboration</button><button type="button" class="topic" aria-pressed="false">Just saying hi</button></div>
+    <label class="field"><span>Message</span><textarea id="cf-msg" name="message" placeholder="Tell me about the project, timeline, or what you need." required></textarea></label>
+    <div class="fc-foot"><button class="send" type="submit">Send message <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button><span class="fc-note" id="cf-status" role="status" aria-live="polite">Usually replies within a day.</span></div>
+  </form>
 </section>
 
-<footer class="mono" data-b><span>© 2026 Al Sadi Khan. All rights reserved.</span><div class="soc"><a data-i="github" href="#" aria-label="GitHub"></a><a data-i="linkedin" href="#" aria-label="LinkedIn"></a><a data-i="facebook" href="#" aria-label="Facebook"></a><a data-i="instagram" href="#" aria-label="Instagram"></a><a data-i="x" href="#" aria-label="X"></a></div></footer>
+<footer class="mono" data-b><span>© 2026 Al Sadi Khan. All rights reserved.</span><div class="soc"><a data-i="github" href="https://github.com/alsadikhan" aria-label="GitHub"></a><a data-i="linkedin" href="#" aria-label="LinkedIn"></a><a data-i="x" href="https://x.com/" aria-label="X" target="_blank" rel="noopener noreferrer"></a><a data-i="email" href="https://mail.google.com/mail/?view=cm&amp;to=alsadikhan0%40gmail.com" aria-label="Email Al Sadi Khan" target="_blank" rel="noopener noreferrer"></a></div></footer>
 
 <script src="js/script.js"></script>
 </body>

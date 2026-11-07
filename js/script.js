@@ -11,6 +11,68 @@ else{emailLink.target='_blank';emailLink.rel='noopener noreferrer'}
 updateEmailLink();
 emailLayout.addEventListener('change',updateEmailLink);
 
+/* Send contact form submissions through the Vercel API endpoint. */
+const form=document.getElementById('contactForm');
+if(form){
+const topics=[...form.querySelectorAll('.topic')];
+topics.forEach(topic=>topic.addEventListener('click',()=>{
+topics.forEach(option=>{
+const selected=option===topic;
+option.classList.toggle('active',selected);
+option.setAttribute('aria-pressed',String(selected));
+});
+}));
+form.addEventListener('submit',async event=>{
+event.preventDefault();
+if(!form.reportValidity())return;
+const value=id=>document.getElementById(id).value.trim();
+const topic=form.querySelector('.topic.active').textContent.trim();
+const button=form.querySelector('[type="submit"]');
+const status=document.getElementById('cf-status');
+button.disabled=true;
+status.textContent='Sending your message…';
+try{
+const response=await fetch('/api/contact',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({name:value('cf-name'),email:value('cf-email'),topic,message:value('cf-msg')})
+});
+let result;
+try{
+result=await response.json();
+}catch{
+throw new Error('Email service returned an unexpected response. Please try again later.');
+}
+if(!response.ok)throw new Error(result.error||'Message could not be sent. Please try again.');
+status.textContent='Message sent! Thank you for reaching out.';
+form.reset();
+topics.forEach((option,index)=>{
+const selected=index===0;
+option.classList.toggle('active',selected);
+option.setAttribute('aria-pressed',String(selected));
+});
+}catch(error){
+status.textContent=error instanceof TypeError
+?'Could not reach the email service. Please try again later.'
+ :error.message;
+}finally{
+button.disabled=false;
+}
+});
+}
+
+const nav=document.querySelector('nav'),navToggle=nav.querySelector('.nav-toggle');
+function setNavOpen(open){
+nav.classList.toggle('menu-open',open);
+navToggle.setAttribute('aria-expanded',String(open));
+navToggle.setAttribute('aria-label',open?'Close navigation menu':'Open navigation menu');
+}
+navToggle.addEventListener('click',()=>setNavOpen(navToggle.getAttribute('aria-expanded')!=='true'));
+nav.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setNavOpen(false)));
+document.addEventListener('click',event=>{if(!nav.contains(event.target))setNavOpen(false)});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')setNavOpen(false)});
+emailLayout.addEventListener('change',event=>{if(!event.matches)setNavOpen(false)});
+
 /* highlight the navigation link for the section currently in view */
 const sectionLinks=[...document.querySelectorAll('nav a[href^="#"]')].map(link=>({
 link,
@@ -74,8 +136,8 @@ document.querySelectorAll('.chip,.btn,.soc a').forEach(el=>{let k=el.dataset.i||
 const TI={book:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',cloud:'<path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>',chat:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',bars:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.500l9 5 9-5"/><path d="M3 17l9 5 9-5"/>',tools:'<path d="M14.700 6.300a1 1 0 000 1.400l1.600 1.600a1 1 0 001.400 0l3.770-3.770a6 6 0 01-7.940 7.940l-6.910 6.910a2.120 2.120 0 01-3-3l6.910-6.910a6 6 0 017.940-7.940l-3.760 3.760z"/>'};
 document.querySelectorAll('[data-ti]').forEach(e=>e.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(TI[e.dataset.ti]||'')+'</svg>');
 
-/* PORTFOLIO letters react to the pointer */
-const hw=document.querySelector('.hero-word'),hs=[...hw.children];
+/* Name letters react to the pointer */
+const hw=document.querySelector('.hero-word'),hs=[...hw.querySelectorAll('.hero-name>span')];
 const lift=e=>hs.forEach(sp=>{const r=sp.getBoundingClientRect(),d=Math.abs(e.clientX-(r.left+r.width/2));sp.style.setProperty('--l',Math.max(0,1-d/(r.width*1.7)).toFixed(2))});
 hw.addEventListener('pointermove',lift);hw.addEventListener('pointerdown',lift);
 hw.addEventListener('pointerleave',()=>hs.forEach(sp=>sp.style.setProperty('--l',0)));
