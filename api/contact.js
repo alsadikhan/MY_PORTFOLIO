@@ -7,9 +7,11 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
-  if (!process.env.RESEND_API_KEY || !process.env.CONTACT_FROM_EMAIL) {
-    console.error('Contact email is not configured.');
-    return res.status(500).json({ error: 'Email service is not configured yet.' });
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is missing from the deployment environment.');
+    return res.status(503).json({
+      error: 'Resend API key is missing. Add RESEND_API_KEY to Vercel Environment Variables, then redeploy.',
+    });
   }
 
   let data = req.body;
@@ -54,7 +56,7 @@ module.exports = async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.CONTACT_FROM_EMAIL,
+        from: process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev',
         to: [recipient],
         reply_to: safeEmail,
         subject: `[${topic}] Message from ${safeName}`,
@@ -64,7 +66,24 @@ module.exports = async function handler(req, res) {
     });
 
     if (!response.ok) {
-      console.error(`Resend request failed with status ${response.status}.`);
+      let resendError;
+      try {
+        resendError = await response.json();
+      } catch {
+        resendError = null;
+      }
+      const errorCode = resendError && resendError.name;
+      console.error(`Resend request failed with status ${response.status}${errorCode ? ` (${errorCode})` : ''}.`);
+      if (response.status === 401) {
+        return res.status(502).json({
+          error: 'Resend rejected the API key. Add a valid RESEND_API_KEY in Vercel and redeploy.',
+        });
+      }
+      if (response.status === 403 || response.status === 422) {
+        return res.status(502).json({
+          error: 'Resend rejected the sender or recipient. Verify a sender domain in Resend and set CONTACT_FROM_EMAIL in Vercel. With the test sender, the recipient must be the email address on your Resend account.',
+        });
+      }
       return res.status(502).json({ error: 'Message could not be sent. Please try again later.' });
     }
 
