@@ -1,6 +1,5 @@
 :root{--bg:#050b16;--text:#eef6ff;--muted:#9db3cc;--accent:#7dd3fc;--accent2:#38bdf8;--ink:#04121f;--glass:rgba(255,255,255,.06);--glass-b:rgba(255,255,255,.16);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 80px);background:var(--bg)}
-html.building{overflow:hidden}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.6;overflow-x:hidden}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:40}
@@ -15,10 +14,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
 .grid-bg{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(circle at 50% 30%,#000,transparent 75%);mask-image:radial-gradient(circle at 50% 30%,#000,transparent 75%)}
 
-/* build-in state */
-html.pre-build [data-b]{opacity:0;transform:translateY(14px)}
-html.pre-build [data-b].on{opacity:1;transform:none;transition:opacity .45s,transform .6s cubic-bezier(.2,.8,.2,1)}
-
 /* glass */
 nav,.card,.flag,.hud{background:var(--glass);border:1px solid var(--glass-b);backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%);box-shadow:0 10px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25)}
 
@@ -28,6 +23,7 @@ nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;margin:12px 4vw 
 nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;align-items:center}
 nav a{color:var(--muted);text-decoration:none;transition:color .2s}
 nav a:hover{color:var(--accent)}
+nav a.active{color:var(--accent);text-shadow:0 0 14px rgba(125,211,252,.65)}
 nav .hire{color:var(--ink);background:var(--accent);padding:6px 14px;border-radius:9px;font-weight:700}
 nav .hire:hover{color:var(--ink);background:#fff}
 

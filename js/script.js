@@ -11,6 +11,28 @@ else{emailLink.target='_blank';emailLink.rel='noopener noreferrer'}
 updateEmailLink();
 emailLayout.addEventListener('change',updateEmailLink);
 
+/* highlight the navigation link for the section currently in view */
+const sectionLinks=[...document.querySelectorAll('nav a[href^="#"]')].map(link=>({
+link,
+section:document.querySelector(link.getAttribute('href'))
+})).filter(item=>item.section);
+function setActiveSection(section){
+sectionLinks.forEach(({link,section:target})=>{
+const active=target===section;
+link.classList.toggle('active',active);
+if(active)link.setAttribute('aria-current','location');
+else link.removeAttribute('aria-current');
+});
+}
+const sectionObserver=new IntersectionObserver(entries=>{
+const current=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+if(current)setActiveSection(current.target);
+},{rootMargin:'-90px 0px -65% 0px',threshold:[0,.25,.5,1]});
+sectionLinks.forEach(({section})=>sectionObserver.observe(section));
+sectionLinks.forEach(({link,section})=>link.addEventListener('click',()=>{
+setActiveSection(section);
+}));
+
 /* always-on polish: scroll bar, mouse glow, card spotlight */
 const bar=$('bar'),glow=$('glow');
 addEventListener('scroll',()=>{const h=root;bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight||1)*100)+'%'},{passive:true});
@@ -58,59 +80,270 @@ const lift=e=>hs.forEach(sp=>{const r=sp.getBoundingClientRect(),d=Math.abs(e.cl
 hw.addEventListener('pointermove',lift);hw.addEventListener('pointerdown',lift);
 hw.addEventListener('pointerleave',()=>hs.forEach(sp=>sp.style.setProperty('--l',0)));
 
-if(root.classList.contains('pre-build'))run();
+/* Type visible content only while the page is actively scrolling. */
+if(root.classList.contains('scroll-typing'))runScrollTyping();
 
-/* build-in animation: cursors fly in, selection boxes appear, text types itself */
-function run(){
-const fx=$('fx'),hud=$('hud'),CO=['#7dd3fc','#a5b4fc','#5eead4','#f9a8d4','#93c5fd','#fde68a','#86efac','#fdba74'],NM=['agent-01','planner','builder','reviewer','designer','copywriter','tester','deployer'];
-let skipped=false,done=0,ai=0;
-const waits=new Set(),sleep=ms=>skipped?Promise.resolve():new Promise(resolve=>{const timer=setTimeout(()=>{waits.delete(cancel);resolve()},ms),cancel=()=>{clearTimeout(timer);waits.delete(cancel);resolve()};waits.add(cancel)});
-hud.classList.add('show');
-/* agents (cursors) */
-const agents=NM.map((n,i)=>{const el=document.createElement('div');el.className='ag';el.style.setProperty('--c',CO[i]);
-el.innerHTML='<svg viewBox="0 0 16 16"><path d="M1 1l5 14 2-6 6-2z" fill="'+CO[i]+'" stroke="#fff" stroke-width=".8"/></svg><i>'+n+'</i>';fx.appendChild(el);
-return{el,c:CO[i],x:innerWidth*(.3+Math.random()*.5),y:innerHeight+60,tx:0,ty:0,k:.1+Math.random()*.05,follow:null,box:null}});
-$('dots').innerHTML=CO.map(c=>'<s style="--c:'+c+'"></s>').join('');
-/* items */
-const items=[...document.querySelectorAll('[data-b]')].map(el=>({el,w:el.offsetWidth,h:el.offsetHeight,nodes:[],caret:null}));
-items.forEach(it=>{it.el.style.minWidth=it.w+'px';it.el.style.minHeight=it.h+'px'});
-items.forEach(it=>{const w=document.createTreeWalker(it.el,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest('.nt')||!n.nodeValue.trim()?2:1});
-while(w.nextNode())it.nodes.push([w.currentNode,w.currentNode.nodeValue]);it.nodes.forEach(x=>x[0].nodeValue='')});
+function runScrollTyping(){
+const fx=$('fx'),hud=$('hud'),skip=$('skip');
+const colors=['#7dd3fc','#a5b4fc','#5eead4','#f9a8d4','#93c5fd','#fde68a','#86efac','#fdba74'];
+const names=['agent-01','planner','builder','reviewer','designer','copywriter','tester','deployer'];
+function createAgent(index){
+const name=index<names.length?names[index]:'agent-'+String(index+1).padStart(2,'0');
+const color=colors[index%colors.length];
+const el=document.createElement('div');
+el.className='ag';
+el.style.setProperty('--c',color);
+el.innerHTML='<svg viewBox="0 0 16 16"><path d="M1 1l5 14 2-6 6-2z" fill="'+color+'" stroke="#fff" stroke-width=".8"/></svg><i>'+name+'</i>';
+fx.appendChild(el);
+return{el,x:innerWidth*.5,y:innerHeight+40,tx:0,ty:0,follow:null};
+}
+const agents=names.map((_,index)=>createAgent(index));
+$('dots').innerHTML=colors.map(color=>'<s style="--c:'+color+'"></s>').join('');
+
+const items=[...document.querySelectorAll('[data-b]')].map(el=>{
+const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,{acceptNode:node=>node.parentElement.closest('.nt')||!node.nodeValue.trim()?2:1});
+const nodes=[];
+while(walker.nextNode())nodes.push([walker.currentNode,walker.currentNode.nodeValue]);
+return{el,nodes,caret:null,seen:false};
+}).filter(item=>item.nodes.length);
 $('nt').textContent=items.length;
-/* groups by section */
-const groups=[];let last;items.forEach(it=>{const g=it.el.closest('section,footer');const k=it.el.tagName==='NAV'?'top':(g&&(g.id||g.tagName));if(k!==last){groups.push([]);last=k}groups[groups.length-1].push(it)});
-/* typing */
-function type(it,c){return new Promise(res=>{const tot=it.nodes.reduce((s,x)=>s+x[1].length,0);if(!tot)return res();
-const per=Math.max(1,Math.ceil(tot/110)),dt=Math.max(14,Math.min(40,1100/(tot/per)));
-const caret=it.caret=document.createElement('i');caret.className='caret';caret.style.setProperty('--c',c);let ni=0,ci=0;
-(function step(){if(skipped){it.nodes.forEach(x=>x[0].nodeValue=x[1]);caret.remove();return res()}
-if(ni>=it.nodes.length){caret.remove();return res()}
-const[n,s]=it.nodes[ni];ci=Math.min(ci+per,s.length);n.nodeValue=s.slice(0,ci);n.parentNode.insertBefore(caret,n.nextSibling);
-if(ci>=s.length){ni++;ci=0}setTimeout(step,dt)})()})}
-function ensureVisible(el){const r=el.getBoundingClientRect();if(r.top<90||r.bottom>innerHeight-110)scrollTo({top:scrollY+r.top-innerHeight*.3,behavior:'smooth'})}
-/* one element: agent flies in -> selection box -> type */
-const boxes=new Set();
-async function build(it){const a=agents[ai++%agents.length];a.el.classList.add('on');
-ensureVisible(it.el);const r=it.el.getBoundingClientRect();a.tx=r.left+8;a.ty=r.top+8;
-await sleep(520);
-const box=document.createElement('div');box.className='sel';box.style.setProperty('--c',a.c);box.innerHTML='<u></u><u></u><u></u><u></u><em></em>';fx.appendChild(box);
-const b={el:it.el,box,lab:box.lastChild};boxes.add(b);a.follow=it;it.el.classList.add('on');
-await type(it,a.c);await sleep(260);
-box.classList.add('out');a.follow=null;a.tx=Math.random()*innerWidth;a.ty=Math.random()*innerHeight;
-setTimeout(()=>{box.remove();boxes.delete(b)},380);
-it.el.style.minWidth=it.el.style.minHeight='';it.el.classList.remove('on');it.el.removeAttribute('data-b');
-$('nd').textContent=++done}
-/* render loop */
-(function tick(){for(const a of agents){if(a.follow){const f=a.follow,r=f.el.getBoundingClientRect(),c=f.caret&&f.caret.isConnected?f.caret.getBoundingClientRect():null;
-a.tx=c?c.right+4:r.left+8;a.ty=c?c.bottom:r.top+8}
-a.x+=(a.tx-a.x)*a.k;a.y+=(a.ty-a.y)*a.k;a.el.style.transform='translate('+a.x+'px,'+a.y+'px)'}
-for(const b of boxes){const r=b.el.getBoundingClientRect();b.box.style.transform='translate('+r.left+'px,'+r.top+'px)';b.box.style.width=r.width+'px';b.box.style.height=r.height+'px';b.lab.textContent=Math.round(r.width)+' × '+Math.round(r.height)}
-requestAnimationFrame(tick)})();
-$('skip').onclick=()=>{skipped=true;waits.forEach(cancel=>cancel())};
-/* timeline */
-(async()=>{await sleep(1600);
-for(const g of groups){await Promise.all(g.map((it,i)=>sleep(i*190).then(()=>build(it))));await sleep(300)}
-root.classList.remove('pre-build','building');$('st').textContent='Complete ✓';$('skip').style.display='none';
-scrollTo({top:0,behavior:'smooth'});agents.forEach(a=>a.el.classList.remove('on'));
-setTimeout(()=>hud.classList.remove('show'),2600);setTimeout(()=>fx.remove(),3500)})();
+
+const active=new Map(),boxes=new Set(),autoPlayedItems=new Set(),manualPlayedItems=new Set();
+let rendering=false,lastRenderTime=0,skipAnimation=false,direction=1,autoScrollRunning=false,autoScrollAtEnd=false,autoScrollFrame=0,autoScrollTime=0;
+let lastScrollY=scrollY,pendingDirection=1,pendingDistance=0,scanFrame=0,hudTimer=0,scrollEndTimer=0,completed=0;
+const originalScrollBehavior=root.style.scrollBehavior;
+
+function visible(item){
+const rect=item.el.getBoundingClientRect();
+return rect.bottom>0&&rect.top<innerHeight&&rect.right>0&&rect.left<innerWidth;
+}
+function restore(item,state){
+if(state.box){state.box.remove();boxes.delete(state.box)}
+if(item.caret){item.caret.remove();item.caret=null}
+item.nodes.forEach(([node,text])=>node.nodeValue=text);
+item.el.style.minHeight='';
+state.agent.follow=null;
+state.agent.el.classList.remove('on');
+active.delete(item);
+}
+function finishScroll(){
+if(scanFrame){
+clearTimeout(scrollEndTimer);
+scrollEndTimer=setTimeout(finishScroll,50);
+return;
+}
+clearTimeout(scrollEndTimer);
+if(active.size)return;
+$('st').textContent='Scroll to type';
+clearTimeout(hudTimer);
+hudTimer=setTimeout(()=>hud.classList.remove('show'),350);
+}
+function stopAutoScroll(){
+if(!autoScrollRunning)return;
+autoScrollRunning=false;
+if(autoScrollFrame)cancelAnimationFrame(autoScrollFrame);
+autoScrollFrame=0;
+autoScrollTime=0;
+root.style.scrollBehavior=originalScrollBehavior;
+}
+function returnToTopAfterAutoScroll(){
+if(!autoScrollAtEnd||active.size||skipAnimation)return;
+autoScrollAtEnd=false;
+window.scrollTo({top:0,behavior:'smooth'});
+}
+function autoScroll(time){
+if(!autoScrollRunning||skipAnimation)return;
+if(!autoScrollTime)autoScrollTime=time;
+const elapsed=Math.min(time-autoScrollTime,50);
+autoScrollTime=time;
+const maxScroll=root.scrollHeight-innerHeight;
+const nextY=Math.min(maxScroll,scrollY+elapsed*.45);
+window.scrollTo(0,nextY);
+if(nextY<maxScroll)autoScrollFrame=requestAnimationFrame(autoScroll);
+else{
+stopAutoScroll();
+autoScrollAtEnd=true;
+returnToTopAfterAutoScroll();
+}
+}
+function startRender(){
+if(rendering)return;
+rendering=true;
+requestAnimationFrame(render);
+}
+function render(time){
+const frameDuration=lastRenderTime?Math.min(time-lastRenderTime,50):16.67;
+lastRenderTime=time;
+const easing=1-Math.pow(1-.22,frameDuration/16.67);
+const updates=[];
+active.forEach((state,item)=>{
+if(state.phase!=='type'||time<state.nextTypeAt)return;
+const steps=Math.min(12,Math.floor((time-state.nextTypeAt)/state.typingDelay)+1);
+state.nextTypeAt+=steps*state.typingDelay;
+type(item,state,steps);
+});
+active.forEach((state,item)=>{
+const {agent,box}=state;
+const rect=item.el.getBoundingClientRect();
+if(agent.follow){
+const caret=item.caret&&item.caret.isConnected?item.caret.getBoundingClientRect():null;
+agent.tx=caret?caret.right+4:rect.left+8;
+agent.ty=caret?caret.bottom:rect.top+8;
+}
+agent.x+=(agent.tx-agent.x)*easing;
+agent.y+=(agent.ty-agent.y)*easing;
+updates.push({agent,box,rect,x:agent.x,y:agent.y});
+});
+updates.forEach(({agent,box,rect,x,y})=>{
+agent.el.style.transform='translate('+x+'px,'+y+'px)';
+if(!box)return;
+box.style.transform='translate('+rect.left+'px,'+rect.top+'px)';
+const width=rect.width+'px',height=rect.height+'px';
+if(box.style.width!==width)box.style.width=width;
+if(box.style.height!==height)box.style.height=height;
+const size=Math.round(rect.width)+' × '+Math.round(rect.height);
+if(box.lastChild.textContent!==size)box.lastChild.textContent=size;
+});
+if(active.size)requestAnimationFrame(render);
+else{rendering=false;lastRenderTime=0}
+}
+function addBox(item,state){
+if(state.box)return;
+const box=document.createElement('div');
+box.className='sel';box.style.setProperty('--c',state.agent.el.style.getPropertyValue('--c'));
+box.innerHTML='<u></u><u></u><u></u><u></u><em></em>';
+fx.appendChild(box);state.box=box;boxes.add(box);
+}
+function addCaret(item,state,node){
+if(!item.caret){
+item.caret=document.createElement('i');item.caret.className='caret';
+item.caret.style.setProperty('--c',state.agent.el.style.getPropertyValue('--c'));
+}
+node.parentNode.insertBefore(item.caret,node.nextSibling);
+}
+function type(item,state,steps){
+if(!active.has(item)||state.phase!=='type')return;
+let index=state.nodeIndex,offset=state.offset,remaining=steps;
+const changedNodes=new Map();
+while(remaining>0&&index<item.nodes.length){
+const[node,text]=item.nodes[index],next=Math.min(offset+2,text.length);
+changedNodes.set(node,text.slice(0,next));
+remaining--;
+if(next>=text.length){index++;offset=0}
+else offset=next;
+}
+state.nodeIndex=index;
+state.offset=offset;
+let caretNode=null;
+changedNodes.forEach((text,node)=>{node.nodeValue=text;caretNode=node});
+if(index>=item.nodes.length){
+if(state.box){state.box.remove();boxes.delete(state.box);state.box=null}
+if(item.caret)item.caret.remove();
+item.caret=null;state.phase='typed';
+state.agent.follow=null;state.agent.el.classList.remove('on');
+item.el.style.minHeight='';
+active.delete(item);completed=Math.min(items.length,completed+1);
+$('nd').textContent=completed;
+if(!active.size){
+finishScroll();
+returnToTopAfterAutoScroll();
+}
+return;
+}
+if(caretNode)addCaret(item,state,caretNode);
+}
+function startItem(item,isAutoScroll=autoScrollRunning){
+const playedItems=isAutoScroll?autoPlayedItems:manualPlayedItems;
+if(active.has(item)||playedItems.has(item))return;
+playedItems.add(item);
+let agent=agents.find(candidate=>![...active.values()].some(state=>state.agent===candidate));
+if(!agent){
+agent=createAgent(agents.length);
+agents.push(agent);
+$('na').textContent=agents.length;
+}
+const typingDelay=isAutoScroll?5:25;
+const state={agent,box:null,phase:'type',typingDelay,nextTypeAt:performance.now()+350,nodeIndex:0,offset:0,height:item.el.getBoundingClientRect().height};
+active.set(item,state);
+item.el.style.minHeight=state.height+'px';
+item.nodes.forEach(([node])=>node.nodeValue='');
+agent.el.classList.add('on');
+agent.follow=item;
+const rect=item.el.getBoundingClientRect();
+agent.tx=rect.left+8;agent.ty=rect.top+8;
+addBox(item,state);
+startRender();
+}
+function scan(){
+scanFrame=0;
+if(direction<0){
+active.forEach((state,item)=>restore(item,state));
+return;
+}
+items.forEach(item=>{
+if(visible(item)&&!(autoScrollRunning?autoPlayedItems:manualPlayedItems).has(item))startItem(item);
+});
+}
+function onScroll(){
+if(skipAnimation)return;
+const currentY=scrollY;
+if(autoScrollRunning){
+direction=1;pendingDirection=1;pendingDistance=0;lastScrollY=currentY;
+}else if(currentY!==lastScrollY){
+const delta=currentY-lastScrollY,nextDirection=delta>0?1:-1;
+lastScrollY=currentY;
+if(nextDirection===direction){pendingDirection=nextDirection;pendingDistance=0}
+else{
+if(nextDirection!==pendingDirection){pendingDirection=nextDirection;pendingDistance=0}
+pendingDistance+=Math.abs(delta);
+if(pendingDistance>=8){direction=nextDirection;pendingDistance=0}
+}
+}
+if(currentY<=1){direction=1;pendingDirection=1;pendingDistance=0;manualPlayedItems.clear()}
+clearTimeout(hudTimer);
+hud.classList.add('show');
+$('st').textContent=direction>0?'Typing while scrolling':'Normal while scrolling';
+if(!scanFrame)scanFrame=requestAnimationFrame(scan);
+if(direction<0){
+manualPlayedItems.clear();
+active.forEach((state,item)=>restore(item,state));
+if(scanFrame){cancelAnimationFrame(scanFrame);scanFrame=0}
+}
+clearTimeout(scrollEndTimer);
+scrollEndTimer=setTimeout(finishScroll,220);
+}
+addEventListener('scroll',onScroll,{passive:true});
+addEventListener('wheel',stopAutoScroll,{passive:true});
+addEventListener('touchstart',stopAutoScroll,{passive:true});
+sectionLinks.forEach(({link})=>link.addEventListener('click',stopAutoScroll));
+addEventListener('keydown',event=>{
+if(['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(event.key))stopAutoScroll();
+});
+skip.addEventListener('click',()=>{
+skipAnimation=true;stopAutoScroll();clearTimeout(hudTimer);clearTimeout(scrollEndTimer);
+active.forEach((state,item)=>restore(item,state));
+items.forEach(item=>item.nodes.forEach(([node,text])=>node.nodeValue=text));
+root.classList.remove('scroll-typing','scroll-ready');
+fx.remove();hud.classList.remove('show');
+});
+addEventListener('scrollend',()=>{
+if(skipAnimation)return;
+finishScroll();
+},{passive:true});
+requestAnimationFrame(()=>{
+root.style.scrollBehavior='auto';
+window.scrollTo(0,0);
+lastScrollY=0;
+direction=1;
+root.classList.add('scroll-ready');
+const initialItems=items.filter(visible);
+if(initialItems.length){
+clearTimeout(hudTimer);
+hud.classList.add('show');
+$('st').textContent='Auto scrolling';
+initialItems.forEach(item=>startItem(item,true));
+}
+autoScrollRunning=true;
+autoScrollFrame=requestAnimationFrame(autoScroll);
+});
 }
