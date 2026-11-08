@@ -74,6 +74,66 @@
     <div class="card" data-b><div class="tile" data-ti="chat"></div><span class="mono accent">Python</span><h3>Chat Application</h3><p>Real-time messaging app built with sockets and a simple interface.</p><div class="chips mono"><span class="chip">Python</span><span class="chip">SQL</span><span class="chip">Git</span></div><a class="more mono" href="#">View on GitHub ↗</a></div>
     <div class="card" data-b><div class="tile" data-ti="bars"></div><span class="mono accent">C++</span><h3>Algorithm Visualizer</h3><p>Step-by-step visualization of sorting and graph algorithms.</p><div class="chips mono"><span class="chip">C++</span><span class="chip">Git</span></div><a class="more mono" href="#">View on GitHub ↗</a></div>
   </div>
+  <h3 data-b style="font-size:1.5rem;margin:48px 0 6px">Run it live.</h3>
+  <p class="lead" data-b>Pick a project and run it right here, without leaving this page.</p>
+  <div class="live">
+    <div class="live-top">
+      <div class="live-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="live-tabs" role="tablist" aria-label="Projects">
+        <button type="button" class="live-tab active" role="tab" aria-selected="true" data-demo="library">Library System</button>
+        <button type="button" class="live-tab" role="tab" aria-selected="false" data-url="https://your-weather-app.example.com">Weather Dashboard</button>
+        <button type="button" class="live-tab" role="tab" aria-selected="false" data-url="https://your-website.example.com">My Website</button>
+      </div>
+      <div class="live-tools"><button type="button" class="live-tool" id="liveMobile" aria-pressed="false">Phone view</button><a class="live-tool" id="liveOpen" target="_blank" rel="noopener noreferrer" hidden>Open in new tab ↗</a></div>
+    </div>
+    <div class="live-url" id="liveUrl"></div>
+    <div class="live-stage" id="liveStage">
+      <div class="live-hold" id="liveHold"><p id="liveMsg"></p><button type="button" class="live-run" id="liveRun">Run live project</button></div>
+      <iframe id="liveFrame" title="Live project preview" sandbox="allow-scripts allow-forms allow-popups" hidden></iframe>
+    </div>
+    <div class="live-note">If a website stays blank, its host blocks embedding. Use “Open in new tab”.</div>
+  </div>
+
+  <template id="demo-library">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;font:14px system-ui,sans-serif;background:#0b1220;color:#e9eff8;padding:18px}
+h1{font-size:16px;margin:0 0 14px}
+.stats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.stat{flex:1;min-width:90px;background:#121b2e;border:1px solid #22314d;border-radius:10px;padding:10px}
+.stat b{display:block;font-size:22px;color:#7dd3fc}.stat span{font-size:11px;color:#8fa3bf}
+.row{display:flex;gap:8px;margin-bottom:12px}
+input{flex:1;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid #22314d;background:#0b1220;color:#e9eff8;font:inherit}
+button{padding:7px 13px;border:0;border-radius:8px;background:#7dd3fc;color:#04121f;font:inherit;font-weight:600;cursor:pointer}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #22314d}
+th{color:#8fa3bf;font-weight:500;font-size:12px}
+.ok{color:#4ade80}.bad{color:#fb7185}
+</style>
+<h1>Library Management System · demo</h1>
+<div class="stats"><div class="stat"><b id="t">0</b><span>Titles</span></div><div class="stat"><b id="a">0</b><span>Available</span></div><div class="stat"><b id="i">0</b><span>Issued</span></div></div>
+<div class="row"><input id="q" placeholder="Search books..." aria-label="Search books"></div>
+<div class="row"><input id="nt" placeholder="New book title" aria-label="New book title"><input id="na" placeholder="Author" aria-label="Author"><button type="button" id="add">Add</button></div>
+<table><thead><tr><th>Title</th><th>Author</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+<script>
+var nextId=10,books=[
+ {id:1,t:'Introduction to Algorithms',a:'T. Cormen',out:false},
+ {id:2,t:'Operating System Concepts',a:'A. Silberschatz',out:false},
+ {id:3,t:'Database System Concepts',a:'A. Silberschatz',out:true},
+ {id:4,t:'Clean Code',a:'R. Martin',out:false}];
+var $=function(x){return document.getElementById(x)};
+var esc=function(v){return String(v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+function draw(){
+ var q=$('q').value.toLowerCase(),issued=books.filter(function(b){return b.out}).length;
+ $('rows').innerHTML=books.filter(function(b){return (b.t+' '+b.a).toLowerCase().indexOf(q)>-1}).map(function(b){
+  return '<tr><td>'+esc(b.t)+'</td><td>'+esc(b.a)+'</td><td class="'+(b.out?'bad':'ok')+'">'+(b.out?'Issued':'Available')+'</td><td><button type="button" data-id="'+b.id+'">'+(b.out?'Return':'Issue')+'</button></td></tr>'}).join('');
+ $('t').textContent=books.length;$('i').textContent=issued;$('a').textContent=books.length-issued;
+}
+$('rows').onclick=function(e){var id=+e.target.getAttribute('data-id');if(!id)return;books.forEach(function(b){if(b.id===id)b.out=!b.out});draw()};
+$('add').onclick=function(){var t=$('nt').value.trim(),a=$('na').value.trim();if(!t||!a)return;books.unshift({id:++nextId,t:t,a:a,out:false});$('nt').value='';$('na').value='';draw()};
+$('q').oninput=draw;draw();
+</script>
+  </template>
 </section>
 
 <section id="skills">
