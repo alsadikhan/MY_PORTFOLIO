@@ -133,7 +133,7 @@ document.querySelectorAll('[data-auto]').forEach(m=>{const row=m.dataset.auto.sp
 document.querySelectorAll('.chip,.btn,.soc a').forEach(el=>{let k=el.dataset.i||el.textContent.trim().toLowerCase();k=AL[k]||k;if(IC[k]&&!el.querySelector('.ic'))el.insertAdjacentHTML('afterbegin',svg(k))});
 
 /* small line icons on project and skill cards */
-const TI={book:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',cloud:'<path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>',chat:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',bars:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.500l9 5 9-5"/><path d="M3 17l9 5 9-5"/>',tools:'<path d="M14.700 6.300a1 1 0 000 1.400l1.600 1.600a1 1 0 001.400 0l3.770-3.770a6 6 0 01-7.940 7.940l-6.910 6.910a2.120 2.120 0 01-3-3l6.910-6.910a6 6 0 017.940-7.940l-3.760 3.760z"/>'};
+const TI={book:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',store:'<path d="M3 10h18v11H3z"/><path d="M5 10l1-7h12l1 7M7 14h10"/>',cloud:'<path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>',chat:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',bars:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.500l9 5 9-5"/><path d="M3 17l9 5 9-5"/>',tools:'<path d="M14.700 6.300a1 1 0 000 1.400l1.600 1.600a1 1 0 001.400 0l3.770-3.770a6 6 0 01-7.940 7.940l-6.910 6.910a2.120 2.120 0 01-3-3l6.910-6.910a6 6 0 017.940-7.940l-3.760 3.760z"/>'};
 document.querySelectorAll('[data-ti]').forEach(e=>e.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(TI[e.dataset.ti]||'')+'</svg>');
 
 /* live project preview */
@@ -150,9 +150,9 @@ const selected=item===tab;
 item.classList.toggle('active',selected);
 item.setAttribute('aria-selected',String(selected));
 });
-const demo=tab.dataset.demo,url=tab.dataset.url||'';
-urlEl.textContent=demo?'Demo version: runs in your browser, no server needed':url;
-openEl.hidden=!!demo||isPlaceholder(url);
+const url=tab.dataset.url||'';
+urlEl.textContent=url;
+openEl.hidden=isPlaceholder(url);
 if(!openEl.hidden)openEl.href=url;
 frame.hidden=true;
 frame.removeAttribute('src');
@@ -160,22 +160,18 @@ frame.removeAttribute('srcdoc');
 stage.classList.remove('loading');
 hold.hidden=false;
 runBtn.hidden=false;
-msg.textContent=demo?'A working demo of this project, running right here in the page.':isPlaceholder(url)?'No live link yet. In index.html, set data-url on this tab to your hosted project address.':'Click to load the live project inside this page.';
+msg.textContent=isPlaceholder(url)?'No live link yet. In index.html, set data-url on this tab to your hosted project address.':'Click to load the live project inside this page.';
 }
 runBtn.addEventListener('click',()=>{
-const demo=currentTab.dataset.demo,url=currentTab.dataset.url||'';
-if(!demo&&isPlaceholder(url)){
+const url=currentTab.dataset.url||'';
+if(isPlaceholder(url)){
 msg.textContent='Add your real link first: change data-url on this tab in index.html.';
 return;
 }
 stage.classList.add('loading');
 frame.hidden=false;
 hold.hidden=true;
-if(demo){
-const template=document.getElementById('demo-'+demo);
-if(!template)throw new Error('Missing live demo template: '+demo);
-frame.srcdoc=template.innerHTML;
-}else frame.src=url;
+frame.src=url;
 });
 frame.addEventListener('load',()=>stage.classList.remove('loading'));
 tabs.forEach(tab=>tab.addEventListener('click',()=>selectLiveTab(tab)));
